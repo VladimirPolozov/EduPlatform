@@ -1,9 +1,10 @@
 # instructions for copilot
 EduPlatform/docs/architecture.md
 EduPlatform/docs/development.md
-EduPlatform/.cursor/rules/architecture.mdc
+EduPlatform/.cursor/rules/architecture.md
 EduPlatform/docs/progress.md
 
 # dependencies
 EduPlatform/image-worker/node_modules/
 EduPlatform/main-api/node_modules/
+.vscode/settings.json
