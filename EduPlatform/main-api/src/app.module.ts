@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AppConfigModule } from './config/config.module';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CoursesModule } from './modules/courses/courses.module';
@@ -7,6 +9,8 @@ import { ImagesModule } from './modules/images/images.module';
 
 @Module({
   imports: [
+    AppConfigModule,
+    CommonModule,
     AuthModule,
     UsersModule,
     CoursesModule,
