@@ -1,0 +1,7 @@
+EduPlatform/docs/architecture.md
+EduPlatform/docs/development.md
+EduPlatform/.cursor/rules/architecture.mdc
+
+# dependencies
+EduPlatform/image-worker/node_modules/
+EduPlatform/main-api/node_modules/
