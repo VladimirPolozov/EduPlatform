@@ -1,0 +1,11 @@
+docs/architecture.md
+docs/development.md
+.cursor/rules/architecture.mdc
+
+# dependencies
+node_modules/
+image-worker/node_modules/
+
+# environment
+.env
+.env.*
