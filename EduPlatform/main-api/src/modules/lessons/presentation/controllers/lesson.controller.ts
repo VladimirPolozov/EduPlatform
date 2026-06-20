@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { CreateLessonDto } from '../dto/create-lesson.dto';
 import { UpdateLessonDto } from '../dto/update-lesson.dto';
 import { CreateLessonUseCase } from '../../application/use-cases/create-lesson.use-case';
@@ -40,6 +40,13 @@ export class LessonController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher')
   async update(@Param('id') id: string, @Body() dto: UpdateLessonDto, @Req() req: any) {
+    return this.updateLessonUseCase.execute(id, req.user.id, dto);
+  }
+
+  @Put('lessons/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher')
+  async replace(@Param('id') id: string, @Body() dto: UpdateLessonDto, @Req() req: any) {
     return this.updateLessonUseCase.execute(id, req.user.id, dto);
   }
 
