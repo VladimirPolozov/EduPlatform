@@ -11,7 +11,7 @@
 
 ## 1. Запуск инфраструктуры (Docker)
 
-Перед запуском сервисов подними зависимости:
+Перед запуском сервисов:
 
 ```bash
 cd EduPlatform/docs
@@ -71,68 +71,22 @@ curl http://localhost:3001/health
 
 ---
 
-## 3. Если что-то не запускается
+## 3. Примеры запросов и ответов
 
-### Порт занят (EADDRINUSE)
-
-```powershell
-# Найти процесс на порту 3000
-$pid = (netstat -ano | Select-String ":3000").ForEach({ [int]($_ -replace '.*\s(\d+)\s*$','$1') }) | Select-Object -First 1
-if ($pid) { Stop-Process -Id $pid -Force }
-```
-
-Повторить для порта 3001, заменив `:3000` на `:3001`.
-
-### Kafka: топики не создаются
-
-Ошибки `"Topic creation errors"` или `"There is no leader for this topic-partition"` — нормально при первом запуске. Kafka создаёт топики автоматически при первой отправке сообщения. Если consumer не подключается:
-
-```powershell
-docker compose restart kafka
-```
-
-### MongoDB не коннектится
-
-Проверь, что MongoDB запущен:
-
-```powershell
-docker compose ps
-```
-
-Если MongoDB в контейнере, но main-api не подключается — проверь `.env`:
+### Регистрация пользователя
 
 ```
-MONGODB_URI=mongodb://localhost:27017/eduplatform
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "teacher@test.com",
+  "password": "password123",
+  "role": "teacher"
+}
 ```
 
-### Redis не отвечает
-
-```powershell
-redis-cli ping
-# → PONG
-```
-
-Если нет `redis-cli`, проверь контейнер:
-
-```powershell
-docker compose ps | Select-String redis
-```
-
-### Sharp падает с libpng error
-
-Исходное изображение повреждено. Загрузи нормальный PNG/JPG.
-
----
-
-## 4. Примеры запросов и ответов
-
-### Регистрация учителя
-
-```bash
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"teacher@test.com","password":"password123","role":"teacher"}'
-```
+Ожидаемый ответ (201):
 
 ```json
 {
@@ -142,170 +96,297 @@ curl -X POST http://localhost:3000/auth/register \
 }
 ```
 
-### Логин
+### Вход в систему
 
-```bash
-curl -s -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"teacher@test.com","password":"password123"}'
 ```
+POST http://localhost:3000/auth/login
+Content-Type: application/json
 
-```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIs..."
+  "email": "teacher@test.com",
+  "password": "password123"
 }
 ```
 
-### Создание курса (teacher)
+Ожидаемый ответ (201):
 
-```bash
-TOKEN="eyJhbGciOiJIUzI1NiIs..."
-curl -X POST http://localhost:3000/courses \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"title":"Мой курс","description":"Описание курса","price":0}'
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
 ```
+
+### Создание курса (преподаватель)
+
+```
+POST http://localhost:3000/courses
+Content-Type: application/json
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+
+{
+  "title": "Основы программирования",
+  "description": "Вводный курс по программированию",
+  "price": 0
+}
+```
+
+Ожидаемый ответ (201):
 
 ```json
 {
   "id": "6a365a57adf61b49e516cdcf",
-  "title": "Мой курс",
-  "description": "Описание курса",
+  "title": "Основы программирования",
+  "description": "Вводный курс по программированию",
   "teacherId": "6a36340af40c52f7bdb637af",
   "price": 0
 }
 ```
 
-### Список курсов (публичный)
+### Получение списка курсов (публичный)
 
-```bash
-curl http://localhost:3000/courses
+```
+GET http://localhost:3000/courses
 ```
 
-### Получить курс по ID (публичный)
+Ожидаемый ответ (200):
 
-```bash
-curl http://localhost:3000/courses/6a365a57adf61b49e516cdcf
+```json
+[
+  {
+    "id": "6a365a57adf61b49e516cdcf",
+    "title": "Основы программирования",
+    "description": "Вводный курс по программированию",
+    "teacherId": "6a36340af40c52f7bdb637af",
+    "price": 0
+  }
+]
 ```
 
-### Запись студента на курс
+### Получение курса по ID (публичный)
 
-```bash
-TOKEN="<student_token>"
-curl -X POST http://localhost:3000/courses/6a365a57adf61b49e516cdcf/enroll \
-  -H "Authorization: Bearer $TOKEN"
+```
+GET http://localhost:3000/courses/6a365a57adf61b49e516cdcf
 ```
 
-### Создание урока
+Ожидаемый ответ (200):
 
-```bash
-TOKEN="<teacher_token>"
-curl -X POST http://localhost:3000/courses/6a365a57adf61b49e516cdcf/lessons \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"title":"Урок 1","content":"Материал урока"}'
+```json
+{
+  "id": "6a365a57adf61b49e516cdcf",
+  "title": "Основы программирования",
+  "description": "Вводный курс по программированию",
+  "teacherId": "6a36340af40c52f7bdb637af",
+  "price": 0
+}
 ```
+
+### Обновление курса (преподаватель)
+
+```
+PATCH http://localhost:3000/courses/6a365a57adf61b49e516cdcf
+Content-Type: application/json
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+
+{
+  "title": "Продвинутое программирование",
+  "price": 1990
+}
+```
+
+Ожидаемый ответ (200):
+
+```json
+{
+  "id": "6a365a57adf61b49e516cdcf",
+  "title": "Продвинутое программирование",
+  "description": "Вводный курс по программированию",
+  "teacherId": "6a36340af40c52f7bdb637af",
+  "price": 1990
+}
+```
+
+### Удаление курса (преподаватель)
+
+```
+DELETE http://localhost:3000/courses/6a365a57adf61b49e516cdcf
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+```
+
+Ожидаемый ответ (200):
+
+```json
+{
+  "message": "Course deleted successfully"
+}
+```
+
+### Запись на курс (студент)
+
+```
+POST http://localhost:3000/courses/6a365a57adf61b49e516cdcf/enroll
+Authorization: Bearer {JWT_ТОКЕН_СТУДЕНТА}
+```
+
+Ожидаемый ответ (201):
+
+```json
+{
+  "message": "Enrolled successfully"
+}
+```
+
+### Создание урока (преподаватель)
+
+```
+POST http://localhost:3000/courses/6a365a57adf61b49e516cdcf/lessons
+Content-Type: application/json
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+
+{
+  "title": "Введение в курс",
+  "content": "Описание первого урока",
+  "order": 1
+}
+```
+
+Ожидаемый ответ (201):
 
 ```json
 {
   "id": "6a3660a38d798372f0a0a6ad",
-  "title": "Урок 1",
-  "content": "Материал урока",
+  "title": "Введение в курс",
+  "content": "Описание первого урока",
+  "order": 1,
   "courseId": "6a365a57adf61b49e516cdcf"
 }
 ```
 
-### Загрузка изображения (teacher) — полный flow
+### Получение уроков курса
 
-```bash
-# 1. Создать тестовое изображение (через Sharp или любой файл)
-node -e "
-  const sharp = require('sharp');
-  sharp({ create: { width: 600, height: 400, channels: 3, background: { r: 66, g: 133, b: 244 } } })
-    .png().toFile('test.png').then(() => console.log('OK'))
-"
-
-# 2. Загрузить
-TOKEN="<teacher_token>"
-COURSE_ID="<course_id>"
-curl -s -X POST http://localhost:3000/images/upload \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "file=@test.png" \
-  -F "courseId=${COURSE_ID}"
+```
+GET http://localhost:3000/courses/6a365a57adf61b49e516cdcf/lessons
+Authorization: Bearer {JWT_ТОКЕН}
 ```
 
-**Ответ (сразу после загрузки):**
+Ожидаемый ответ (200):
+
+```json
+[
+  {
+    "id": "6a3660a38d798372f0a0a6ad",
+    "title": "Введение в курс",
+    "content": "Описание первого урока",
+    "order": 1,
+    "courseId": "6a365a57adf61b49e516cdcf"
+  }
+]
+```
+
+### Обновление урока (преподаватель)
+
+```
+PATCH http://localhost:3000/lessons/6a3660a38d798372f0a0a6ad
+Content-Type: application/json
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+
+{
+  "title": "Основы Javascript",
+  "content": "Обновлённое содержание",
+  "order": 2
+}
+```
+
+Ожидаемый ответ (200):
+
+```json
+{
+  "id": "6a3660a38d798372f0a0a6ad",
+  "title": "Основы Javascript",
+  "content": "Обновлённое содержание",
+  "order": 2,
+  "courseId": "6a365a57adf61b49e516cdcf"
+}
+```
+
+### Замена урока (PUT) (преподаватель)
+
+```
+PUT http://localhost:3000/lessons/6a3660a38d798372f0a0a6ad
+Content-Type: application/json
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+
+{
+  "title": "Новый заголовок",
+  "content": "Новое содержание"
+}
+```
+
+Ожидаемый ответ (200):
+
+```json
+{
+  "id": "6a3660a38d798372f0a0a6ad",
+  "title": "Новый заголовок",
+  "content": "Новое содержание",
+  "courseId": "6a365a57adf61b49e516cdcf"
+}
+```
+
+### Удаление урока (преподаватель)
+
+```
+DELETE http://localhost:3000/lessons/6a3660a38d798372f0a0a6ad
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+```
+
+Ожидаемый ответ (200):
+
+```json
+{
+  "message": "Lesson deleted successfully"
+}
+```
+
+### Загрузка изображения (преподаватель)
+
+```
+POST http://localhost:3000/images/upload
+Content-Type: multipart/form-data
+Authorization: Bearer {JWT_ТОКЕН_ПРЕПОДАВАТЕЛЯ}
+
+file: @test.png
+courseId: 6a365a57adf61b49e516cdcf
+```
+
+Ожидаемый ответ (201) — сразу после загрузки:
 
 ```json
 {
   "id": "6a36601538d9fc10fb2f321e",
   "filename": "test.png",
-  "filepath": "D:\\...\\main-api\\uploads\\1781948437486-371570655.png",
+  "filepath": "D:\\projects\\main-api\\uploads\\1781948437486-371570655.png",
   "courseId": "6a365a57adf61b49e516cdcf",
   "uploadedBy": "6a36340af40c52f7bdb637af",
   "status": "processing"
 }
 ```
 
-**Через 3-5 секунд статус изменится на `ready`** — image-worker обработает файл (resize 800px + водяной знак) и обновит запись.
+### Проверка статуса курса
 
-Проверить статус:
-
-```powershell
-node -e "
-  const mongoose = require('mongoose');
-  mongoose.connect('mongodb://localhost:27017/eduplatform').then(async () => {
-    const doc = await mongoose.connection.db.collection('images')
-      .findOne({}, {sort: {createdAt: -1}});
-    console.log(JSON.stringify({status: doc.status, processedPath: doc.processedPath}, null, 2));
-    mongoose.disconnect();
-  })
-"
 ```
+GET http://localhost:3000/health
+```
+
+Ожидаемый ответ (200):
 
 ```json
 {
-  "status": "ready",
-  "processedPath": "D:\\...\\image-worker\\processed\\test-processed.png"
+  "status": "ok",
+  "service": "main-api"
 }
 ```
 
----
-
-## 5. Полный image pipeline
-
-```
-POST /images/upload (teacher)
-        │
-        ▼
-  main-api: сохраняет файл → uploads/
-        │
-        ▼
-  MongoDB: статус = "processing"
-        │
-        ▼
-  Kafka: image.uploaded { imageId, filepath, filename }
-        │
-        ▼
-  image-worker: consumer
-        │
-        ▼
-  Sharp: resize 800px + watermark "EduPlatform"
-        │
-        ▼
-  Сохранение → processed/
-        │
-        ▼
-  MongoDB: статус = "ready", processedPath
-        │
-        ▼
-  Kafka: image.processed { imageId, processedPath }
-        │
-        ▼
-  main-api: consumer → подтверждение
-```
-
-## 6. Структура проекта
+## 4. Структура проекта
 
 ```
 EduPlatform/
