@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IImageRepository } from '../../domain/repositories/image.repository.interface';
 import { KafkaService } from './kafka.service';
 
@@ -6,6 +6,7 @@ import { KafkaService } from './kafka.service';
 export class ImageProcessedConsumer implements OnModuleInit {
   constructor(
     private readonly kafkaService: KafkaService,
+    @Inject(IImageRepository)
     private readonly imageRepository: IImageRepository,
   ) {}
 
