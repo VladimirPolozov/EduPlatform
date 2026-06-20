@@ -7,4 +7,10 @@ EduPlatform/docs/progress.md
 # dependencies
 EduPlatform/image-worker/node_modules/
 EduPlatform/main-api/node_modules/
+
+# IDE
 .vscode/settings.json
+
+# Build output
+EduPlatform/main-api/dist/
+EduPlatform/image-worker/dist/

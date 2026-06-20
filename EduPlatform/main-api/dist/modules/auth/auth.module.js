@@ -8,10 +8,45 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
+const passport_1 = require("@nestjs/passport");
+const config_1 = require("@nestjs/config");
+const auth_controller_1 = require("./presentation/controllers/auth.controller");
+const register_use_case_1 = require("./application/use-cases/register.use-case");
+const login_use_case_1 = require("./application/use-cases/login.use-case");
+const auth_service_1 = require("./infrastructure/auth.service");
+const users_module_1 = require("../users/users.module");
+const jwt_auth_guard_1 = require("./presentation/guards/jwt-auth.guard");
+const roles_guard_1 = require("./presentation/guards/roles.guard");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
-    (0, common_1.Module)({})
+    (0, common_1.Module)({
+        imports: [
+            users_module_1.UsersModule,
+            passport_1.PassportModule,
+            jwt_1.JwtModule.registerAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => ({
+                    secret: configService.getOrThrow('jwt.secret'),
+                    signOptions: {
+                        expiresIn: configService.getOrThrow('jwt.expiresIn'),
+                    },
+                }),
+                inject: [config_1.ConfigService],
+            }),
+        ],
+        controllers: [auth_controller_1.AuthController],
+        providers: [
+            auth_service_1.AuthService,
+            register_use_case_1.RegisterUseCase,
+            login_use_case_1.LoginUseCase,
+            auth_service_1.JwtStrategy,
+            jwt_auth_guard_1.JwtAuthGuard,
+            roles_guard_1.RolesGuard,
+        ],
+        exports: [jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard, passport_1.PassportModule, jwt_1.JwtModule],
+    })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map
