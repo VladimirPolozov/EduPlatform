@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { CreateCourseDto } from '../dto/create-course.dto';
 import { UpdateCourseDto } from '../dto/update-course.dto';
 import { CreateCourseUseCase } from '../../application/use-cases/create-course.use-case';
 import { GetCourseUseCase } from '../../application/use-cases/get-course.use-case';
 import { UpdateCourseUseCase } from '../../application/use-cases/update-course.use-case';
 import { DeleteCourseUseCase } from '../../application/use-cases/delete-course.use-case';
+import { EnrollCourseUseCase } from '../../application/use-cases/enroll-course.use-case';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
 import { Roles } from '../../../auth/presentation/decorators/roles.decorator';
@@ -16,6 +17,7 @@ export class CourseController {
     private readonly getCourseUseCase: GetCourseUseCase,
     private readonly updateCourseUseCase: UpdateCourseUseCase,
     private readonly deleteCourseUseCase: DeleteCourseUseCase,
+    private readonly enrollCourseUseCase: EnrollCourseUseCase,
   ) {}
 
   @Post()
@@ -53,5 +55,13 @@ export class CourseController {
   async remove(@Param('id') id: string, @Req() req: any) {
     await this.deleteCourseUseCase.execute(id, req.user.id);
     return { message: 'Course deleted' };
+  }
+
+  @Post(':id/enroll')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async enroll(@Param('id') id: string, @Req() req: any) {
+    await this.enrollCourseUseCase.execute(id, req.user.id);
+    return { message: 'Enrolled successfully' };
   }
 }

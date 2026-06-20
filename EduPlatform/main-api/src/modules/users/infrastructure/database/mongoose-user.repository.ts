@@ -50,4 +50,10 @@ export class MongooseUserRepository implements IUserRepository {
     }
     return this.mapToDomain(doc);
   }
+
+  async addEnrolledCourse(userId: string, courseId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      $addToSet: { enrolledCourses: courseId },
+    }).exec();
+  }
 }
